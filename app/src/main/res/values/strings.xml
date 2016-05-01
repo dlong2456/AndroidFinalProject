@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">FinalProject</string>
     <string name="action_settings">Settings</string>
+    <string name="title_activity_project_overview">ProjectOverview</string>
+    <string name="title_activity_project_view">ProjectView</string>
+    <string name="title_activity_project_list">ProjectList</string>
 </resources>
