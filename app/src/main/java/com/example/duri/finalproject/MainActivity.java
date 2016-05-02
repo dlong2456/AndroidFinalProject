@@ -5,32 +5,22 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.ArrayMap;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.TextView;
 
-import com.android.volley.AuthFailureError;
-import com.android.volley.NetworkError;
-import com.android.volley.NoConnectionError;
-import com.android.volley.ParseError;
-import com.android.volley.Request;
-import com.android.volley.Response;
-import com.android.volley.ServerError;
-import com.android.volley.TimeoutError;
-import com.android.volley.VolleyError;
-import com.android.volley.VolleyLog;
-import com.android.volley.toolbox.JsonObjectRequest;
-
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.HashMap;
-import java.util.Map;
+import de.tavendo.autobahn.WebSocketConnection;
+import de.tavendo.autobahn.WebSocketException;
+import de.tavendo.autobahn.WebSocketHandler;
 
 public class MainActivity extends AppCompatActivity {
+    private final WebSocketConnection socket = new WebSocketConnection();
+    private int status;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +37,32 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
-        getChangeLog();
+        try {
+            //use ws://10.0.2.2:8080 for localhost
+            //"ws://classroom1.cs.unc.edu:5050" for CS server
+            socket.connect("ws://classroom1.cs.unc.edu:5050", new WebSocketHandler() {
+                @Override
+                public void onOpen() {
+                    Log.v("WEBSOCKETS", "Connected to server.");
+                }
+
+                @Override
+                public void onTextMessage(String payload) {
+                    if (payload.equals("handshake")) {
+                        socket.sendTextMessage("teacher");
+                    } else {
+                        parseJSON(payload);
+                    }
+                }
+
+                @Override
+                public void onClose(int code, String reason) {
+                    Log.v("WEBSOCKETS", "Connection lost " + reason);
+                }
+            });
+        } catch (WebSocketException wse) {
+            Log.d("WEBSOCKETS", wse.getMessage());
+        }
     }
 
     @Override
@@ -71,71 +86,49 @@ public class MainActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
-    //Web request working, but not with this URL
-    //It works on Chrome on my desktop, but not on Android - getting a 401 error
-    //I think it is because it thinks I am not logged in (although I am)
-    //Download rest client on android device and test it out
-    //Also try logging in with Google Drive
-    public void getChangeLog() {
-        final Map<String, String> mHeaders = new ArrayMap<String, String>();
-        mHeaders.put("x-same-domain", "1");
-        Log.v("duriTest", "get change log");
-        final String URL = "https://docs.google.com/document/u/1/d/1zG6ud0GscccmH_GvMAH4SohiCVo8jAeDtsVCMxs9YYI/revisions/load?id=1zG6ud0GscccmH_GvMAH4SohiCVo8jAeDtsVCMxs9YYI&start=341&end=497&smv=0&token=AC4w5Vh826EW31PUXCe0O4ie7OrCvj5AgQ%3A1462032263630";
-        //final String URL = "https://docs.google.com/document/u/1/d/1zG6ud0GscccmH_GvMAH4SohiCVo8jAeDtsVCMxs9YYI/revisions/load?id=1zG6ud0GscccmH_GvMAH4SohiCVo8jAeDtsVCMxs9YYI&start=341&end=497&smv=0&token=AC4w5Vh826EW31PUXCe0O4ie7OrCvj5AgQ%3A1462032263630";
-        // pass second argument as "null" for GET requests
-        JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, URL, null,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        Log.v("Response: ", response.toString());
-                    }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                VolleyLog.v("Error: ", error.networkResponse.statusCode);
-                if (error instanceof TimeoutError || error instanceof NoConnectionError) {
-                    VolleyLog.e("Error: ", "Timeout or connection");
-                } else if (error instanceof AuthFailureError) {
-                    VolleyLog.e("Error: ", "Auth");
-                } else if (error instanceof ServerError) {
-                    VolleyLog.e("Error: ", "Server");
-                } else if (error instanceof NetworkError) {
-                    VolleyLog.e("Error: ", "Network");
-                } else if (error instanceof ParseError) {
-                    VolleyLog.e("Error: ", "Parse");
-                }
-            }
-        }
-        ){
-//            // could be any class that implements Map
-            @Override
-            public Map<String, String> getHeaders() {
-                return mHeaders;
-            };
-        };
 
-        // add the request object to the queue to be executed
-        ApplicationController.getInstance().addToRequestQueue(req);
+    public int getCurrentStatus() {
+        return status;
     }
 
-//    getChangelog: function() {
-//        var regmatch = location.href.match(/^(https:\/\/docs\.google\.com.*?\/document\/d\/)/)
-//        var baseUrl = regmatch[1]
-//        var docId = draftback.getDocId()
-//        var loadUrl = baseUrl + docId + "/revisions/load?id=" + docId + "&start=1&end=" + parseInt(('' + draftback.revisionCount).replace(/,/g, '')) + "&token=" + draftback.token
-//
-//        $.ajax({
-//                type: "get",
-//                url: loadUrl,
-//                headers: {"x-same-domain": 1},
-//        error: function(response, error_type, error) {
-//            var res = response.responseText
-//            chrome.runtime.sendMessage({msg: 'changelog', docId: draftback.getDocId(), changelog: res}, function(response) {});
-//        },
-//        success: function(response) {
-//            console.log(response)
-//        }
-//        })
-//    }
-//})
+    public void setCurrentStatus(int status) {
+        this.status = status;
+    }
+
+    private void parseJSON(String data) {
+        try {
+            JSONObject jObject = new JSONObject(data);
+            if (jObject.has("status")) {
+                //TODO: save this in the database and use them for the live mode and project view
+                //Note: 0 is making progress, 1 is facing difficulty
+                setCurrentStatus(jObject.getInt("status"));
+            } else if (jObject.has("insertCommands")) {
+                //save these in the database and use them for the live mode
+                //This identifies the document and therefore the student. We should have a database query that allows us to
+                //query with the documentId and receive the student's name in return.
+                jObject.getString("documentId");
+                JSONArray insertCommands = jObject.getJSONArray("insertCommands");
+                for (int i = 0; i < insertCommands.length(); i++) {
+                    //TODO: save each of these in the database and use to update live mode
+                    JSONObject insertCommandObject = insertCommands.getJSONObject(i);
+                    insertCommandObject.getLong("timeStamp");
+                    insertCommandObject.getString("content");
+                    insertCommandObject.getInt("index");
+                }
+            } else if (jObject.has("deleteCommands")) {
+                JSONArray deleteCommands = jObject.getJSONArray("deleteCommands");
+                //See above note on documentId
+                jObject.getString("documentId");
+                for (int i = 0; i < deleteCommands.length(); i++) {
+                    //TODO: save each of these in the database and use to update live mode
+                    JSONObject deleteCommandObject = deleteCommands.getJSONObject(i);
+                    deleteCommandObject.getLong("timeStamp");
+                    deleteCommandObject.getInt("endIndex");
+                    deleteCommandObject.getInt("startIndex");
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 }
