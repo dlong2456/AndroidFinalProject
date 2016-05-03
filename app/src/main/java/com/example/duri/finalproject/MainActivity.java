@@ -1,5 +1,6 @@
 package com.example.duri.finalproject;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -57,7 +58,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         try {
             //use ws://10.0.2.2:8080 for localhost
             //"ws://classroom1.cs.unc.edu:5050" for CS server
-            socket.connect("ws://classroom1.cs.unc.edu:5050", new WebSocketHandler() {
+            socket.connect("ws://10.0.2.2:8080", new WebSocketHandler() {
                 @Override
                 public void onOpen() {
                     Log.v("WEBSOCKETS", "Connected to server.");
@@ -116,6 +117,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
     private void parseJSON(String data) {
         try {
             JSONObject jObject = new JSONObject(data);
+            Log.v("WEBSOCKETS", jObject.toString());
             if (jObject.has("status")) {
                 //TODO: save this in the database and use them for the live mode and project view
                 //Note: 0 is making progress, 1 is facing difficulty
@@ -130,10 +132,9 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                     //TODO: save each of these in the database and use to update live mode
                     JSONObject insertCommandObject = insertCommands.getJSONObject(i);
                     insertCommandObject.getLong("timeStamp");
-                    insertCommandObject.getString("content");
+                    Log.v("WEBSOCKETS", insertCommandObject.getString("content"));
                     insertCommandObject.getInt("index");
                 }
-            } else if (jObject.has("deleteCommands")) {
                 JSONArray deleteCommands = jObject.getJSONArray("deleteCommands");
                 //See above note on documentId
                 jObject.getString("documentId");
@@ -141,7 +142,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                     //TODO: save each of these in the database and use to update live mode
                     JSONObject deleteCommandObject = deleteCommands.getJSONObject(i);
                     deleteCommandObject.getLong("timeStamp");
-                    deleteCommandObject.getInt("endIndex");
+                    Log.v("WEBSOCKETS", Integer.toString(deleteCommandObject.getInt("endIndex")));
                     deleteCommandObject.getInt("startIndex");
                 }
             }
@@ -171,6 +172,11 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
             view.loadUrl("https://docs.google.com/document/d/1Pe2CivDGHMg5jGVRUFjcNZOzYx4I0Mkvc-GN25k6p9A/edit?pref=2&pli=1");
             return true;
         }
+    }
+
+    public void projectList(View v) {
+        Intent intent = new Intent(this, ProjectList.class);
+        startActivity(intent);
     }
 
 
