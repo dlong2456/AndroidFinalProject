@@ -1,5 +1,6 @@
 package com.example.duri.finalproject;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -123,7 +124,9 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
     private void parseJSON(String data) {
         try {
             JSONObject jObject = new JSONObject(data);
-//            Log.v("WEBSOCKETS", jObject.toString());
+
+            Log.v("WEBSOCKETS", jObject.toString());
+
             if (jObject.has("status")) {
                 //TODO: save this in the database and use them for the live mode and project view
                 //Note: 0 is making progress, 1 is facing difficulty
@@ -151,7 +154,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                     }
                     document.setText(textData);
                 }
-//                Log.v("WEBSOCKETS", "hello!" + jObject);
+
                 JSONArray deleteCommands = jObject.getJSONArray("deleteCommands");
                 //See above note on documentId
                 jObject.getString("documentId");
@@ -171,6 +174,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                     }
                     System.out.println(textData);
                     document.setText(textData);
+
                 }
             }
         } catch (JSONException e) {
@@ -200,6 +204,11 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
             view.loadUrl("https://docs.google.com/document/d/1Pe2CivDGHMg5jGVRUFjcNZOzYx4I0Mkvc-GN25k6p9A/edit?pref=2&pli=1");
             return true;
         }
+    }
+
+    public void projectList(View v) {
+        Intent intent = new Intent(this, ProjectList.class);
+        startActivity(intent);
     }
 
 
