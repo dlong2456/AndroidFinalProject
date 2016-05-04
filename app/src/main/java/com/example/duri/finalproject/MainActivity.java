@@ -31,11 +31,12 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
 
     private final WebSocketConnection socket = new WebSocketConnection();
     private int status;
+    
     private boolean live = false;
     private String documentId="10eVBvPyYNHGE_xOOoIGfKYkIIrDpg9tUfn8FuSyVKIA";
 
-    TextView document;
-    StringBuilder textData = new StringBuilder("");
+    private TextView document;
+    private StringBuilder textData = new StringBuilder("");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +60,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                 public void onOpen() {
                     Log.v("WEBSOCKETS", "Connected to server.");
                     live(findViewById(R.id.button2));
+
                 }
 
                 @Override
@@ -117,6 +119,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
             JSONObject jObject = new JSONObject(data);
             if (jObject.has("status")) {
                 //Note: 0 is making progress, 1 is facing difficulty
+                //TODO: save this in the database
                 setCurrentStatus(jObject.getInt("status"));
             } else if (jObject.has("insertCommands")) { // this means insert or delete command
                 if(!live) return;
@@ -167,8 +170,8 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                 Log.v("wholeDoc: ", wholeDoc);
                 textData = new StringBuilder(wholeDoc);
                 document.setText(textData);
-            } else if (jObject.has("endOfDoc")) {
-                Log.v("Return String: ", jObject.getString("endOfDoc"));
+            } else if (jObject.has("substring")) {
+                Log.v("SUBSTRING: ", jObject.getString("substring"));
             } else if (jObject.has("beginningOfDoc")) {
                 String partialDoc = jObject.getString("beginningOfDoc");
                 Log.v("BEGINNING OF DOC: ", partialDoc);
@@ -236,9 +239,9 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         }
     }
 
-    public void getDocumentToEnd(String documentId) {
+    public void getDocumentSubstring(String documentId, int index, int substringLength) {
         if (socket != null) {
-            socket.sendTextMessage("{type: documentToEnd, documentId: " + documentId + " }");
+            socket.sendTextMessage("{type: documentSubstring, documentId: " + documentId + ", index: " + index + ", substringLength: " + substringLength + " }");
         }
     }
 
