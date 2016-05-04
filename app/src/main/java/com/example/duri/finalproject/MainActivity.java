@@ -166,7 +166,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                 Log.v("wholeDoc: ", wholeDoc);
                 textData = new StringBuilder(wholeDoc);
                 document.setText(textData);
-            } else if (jObject.has("endOfDoc")) {
+            } else if (jObject.has("substring")) {
                 Log.v("Return String: ", jObject.getString("endOfDoc"));
             } else if (jObject.has("beginningOfDoc")) {
                 Log.v("BEGINNING OF DOC: ", jObject.getString("beginningOfDoc"));
@@ -229,9 +229,9 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         }
     }
 
-    public void getDocumentToEnd(String documentId) {
+    public void getDocumentSubstring(String documentId, int index, int substringLength) {
         if (socket != null) {
-            socket.sendTextMessage("{type: documentToEnd, documentId: " + documentId + " }");
+            socket.sendTextMessage("{type: documentSubstring, documentId: " + documentId + ", index: " + index + ", substringLength: " + substringLength + " }");
         }
     }
 
