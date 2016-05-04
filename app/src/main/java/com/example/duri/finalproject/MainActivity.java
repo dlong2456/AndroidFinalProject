@@ -33,7 +33,6 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
 
     TextView document;
     StringBuilder textData = new StringBuilder("");
-    String textDataFinal;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,7 +47,6 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         document = (TextView) findViewById(R.id.textView2);
 
         document.setText(textData);
-        textDataFinal = textData.toString();
         live(findViewById(R.id.button2));
 
         try {
@@ -169,7 +167,10 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
             } else if (jObject.has("substring")) {
                 Log.v("Return String: ", jObject.getString("endOfDoc"));
             } else if (jObject.has("beginningOfDoc")) {
-                Log.v("BEGINNING OF DOC: ", jObject.getString("beginningOfDoc"));
+                String partialDoc = jObject.getString("beginningOfDoc");
+                Log.v("BEGINNING OF DOC: ", partialDoc);
+                textData = new StringBuilder(partialDoc);
+                document.setText(textData);
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -180,7 +181,9 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
 
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-        document.setText(textDataFinal.substring(0, (int) Math.ceil(progress * .10 * textDataFinal.length())));
+//        document.setText(textDataFinal.substring(0, (int) Math.ceil(progress * .10 * textDataFinal.length())));
+        getDocumentFromBeginning("10eVBvPyYNHGE_xOOoIGfKYkIIrDpg9tUfn8FuSyVKIA",progress);
+
     }
 
     @Override
@@ -205,14 +208,6 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         Button live = (Button) findViewById(R.id.button2);
         view.setBackgroundColor(Color.GREEN);
         live.setBackgroundResource(android.R.drawable.btn_default);
-    }
-
-    class myWebViewClient extends WebViewClient {
-        @Override
-        public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            view.loadUrl("https://docs.google.com/document/d/1iCHQpzQQJmhA67N8kKT4ry4m4wpyUShfD98h_LcxjjM/edit?pref=2&pli=1");
-            return true;
-        }
     }
 
     //These are all going to return asynchronously, so plan accordingly
