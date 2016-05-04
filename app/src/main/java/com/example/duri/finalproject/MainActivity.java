@@ -32,19 +32,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
     private int status;
 
     TextView document;
-    StringBuilder textData = new StringBuilder("This paper will build on eco-critical interpretations of Shakespeare’s work by\n" +
-            "\n" +
-            "discussing the convergence of ecology and performance in Druid Theater’s recent\n" +
-            "\n" +
-            "production DruidShakespeare, an adaptation by Mark O’Rowe of Shakespeare’s\n" +
-            "\n" +
-            "Richard II, Henry IV (Parts I and II), and Henry V. The site-specific nature of the show\n" +
-            "\n" +
-            "and the use of natural elements such as earth, water, and fire in performance\n" +
-            "\n" +
-            "contribute to an eco-critical interpretation of Shakespeare’s history plays.\n" +
-            "\n" +
-            "Specifically, this paper will investigate how the site-specific");
+    StringBuilder textData = new StringBuilder("");
     String textDataFinal;
 
     @Override
@@ -62,10 +50,6 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         document.setText(textData);
         textDataFinal = textData.toString();
         live(findViewById(R.id.button2));
-//        WebView web = (WebView) findViewById(R.id.webView);
-//        web.setWebViewClient(new WebViewClient());
-//
-//        web.loadUrl("https://docs.google.com/document/d/1Pe2CivDGHMg5jGVRUFjcNZOzYx4I0Mkvc-GN25k6p9A/edit?pref=2&pli=1");
 
         try {
             //use ws://10.0.2.2:8080 for localhost
@@ -74,6 +58,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                 @Override
                 public void onOpen() {
                     Log.v("WEBSOCKETS", "Connected to server.");
+                    getWholeDocument("10eVBvPyYNHGE_xOOoIGfKYkIIrDpg9tUfn8FuSyVKIA");
                 }
 
                 @Override
@@ -175,7 +160,10 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
 
                 }
             } else if (jObject.has("wholeDocument")) {
-                Log.v("Return String: ", jObject.getString("wholeDocument"));
+                String wholeDoc= jObject.getString("wholeDocument");
+                Log.v("wholeDoc: ", wholeDoc);
+                textData = new StringBuilder(wholeDoc);
+                document.setText(textData);
             } else if (jObject.has("endOfDoc")) {
                 Log.v("Return String: ", jObject.getString("endOfDoc"));
             } else if (jObject.has("beginningOfDoc")) {
@@ -227,8 +215,9 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
 
     //These are all going to return asynchronously, so plan accordingly
     public void getWholeDocument(String documentId) {
+        System.out.println("socket: " +socket);
+        System.out.println("docId: "+documentId);
         socket.sendTextMessage("{type: wholeDocument, documentId: " + documentId + " }");
-        return;
     }
 
     public void getDocumentFromBeginning(String documentId, long endTime) {
@@ -238,9 +227,5 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
     public void getDocumentToEnd(String documentId) {
         socket.sendTextMessage("{type: documentToEnd, documentId: " + documentId + " }");
     }
-
-
-
-
 
 }
