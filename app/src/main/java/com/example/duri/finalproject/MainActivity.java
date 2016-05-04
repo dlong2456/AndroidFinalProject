@@ -30,9 +30,8 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
 
     private final WebSocketConnection socket = new WebSocketConnection();
     private int status;
-
-    TextView document;
-    StringBuilder textData = new StringBuilder("");
+    private TextView document;
+    private StringBuilder textData = new StringBuilder("");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,7 +55,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                 @Override
                 public void onOpen() {
                     Log.v("WEBSOCKETS", "Connected to server.");
-                    getWholeDocument("10eVBvPyYNHGE_xOOoIGfKYkIIrDpg9tUfn8FuSyVKIA");
+                    getWholeDocument("1iCHQpzQQJmhA67N8kKT4ry4m4wpyUShfD98h_LcxjjM");
                 }
 
                 @Override
@@ -115,6 +114,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
             JSONObject jObject = new JSONObject(data);
             if (jObject.has("status")) {
                 //Note: 0 is making progress, 1 is facing difficulty
+                //TODO: save this in the database
                 setCurrentStatus(jObject.getInt("status"));
             } else if (jObject.has("insertCommands")) {
                 //save these in the database and use them for the live mode
@@ -165,7 +165,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                 textData = new StringBuilder(wholeDoc);
                 document.setText(textData);
             } else if (jObject.has("substring")) {
-                Log.v("Return String: ", jObject.getString("endOfDoc"));
+                Log.v("SUBSTRING: ", jObject.getString("substring"));
             } else if (jObject.has("beginningOfDoc")) {
                 String partialDoc = jObject.getString("beginningOfDoc");
                 Log.v("BEGINNING OF DOC: ", partialDoc);
@@ -182,7 +182,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 //        document.setText(textDataFinal.substring(0, (int) Math.ceil(progress * .10 * textDataFinal.length())));
-        getDocumentFromBeginning("10eVBvPyYNHGE_xOOoIGfKYkIIrDpg9tUfn8FuSyVKIA",progress);
+        getDocumentFromBeginning("1iCHQpzQQJmhA67N8kKT4ry4m4wpyUShfD98h_LcxjjM", progress);
 
     }
 
@@ -204,10 +204,11 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
     }
 
     public void history(View view) {
-        findViewById(R.id.seekBar).setVisibility(View.VISIBLE);
-        Button live = (Button) findViewById(R.id.button2);
-        view.setBackgroundColor(Color.GREEN);
-        live.setBackgroundResource(android.R.drawable.btn_default);
+        getDocumentSubstring("1iCHQpzQQJmhA67N8kKT4ry4m4wpyUShfD98h_LcxjjM", 20, 10);
+//        findViewById(R.id.seekBar).setVisibility(View.VISIBLE);
+//        Button live = (Button) findViewById(R.id.button2);
+//        view.setBackgroundColor(Color.GREEN);
+//        live.setBackgroundResource(android.R.drawable.btn_default);
     }
 
     //These are all going to return asynchronously, so plan accordingly
