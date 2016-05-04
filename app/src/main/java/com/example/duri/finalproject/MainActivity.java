@@ -26,7 +26,7 @@ import de.tavendo.autobahn.WebSocketException;
 import de.tavendo.autobahn.WebSocketHandler;
 
 
-public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBarChangeListener{
+public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBarChangeListener {
 
     private final WebSocketConnection socket = new WebSocketConnection();
     private int status;
@@ -65,6 +65,8 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                 public void onTextMessage(String payload) {
                     if (payload.equals("handshake")) {
                         socket.sendTextMessage("teacher");
+                    } else if (payload.equals("documentNotFound")) {
+                        //TODO: Handle this error
                     } else {
                         parseJSON(payload);
                     }
@@ -129,12 +131,12 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                     Log.v("WEBSOCKETS", content);
 //                    document.append(insertCommandObject.getString("content"));
                     int insertIdx = insertCommandObject.getInt("index");
-                    System.out.println("trying to insert at: "+insertIdx);
-                    System.out.println("length: "+ textData.length() );
-                    if(insertIdx>textData.length()) {
+                    System.out.println("trying to insert at: " + insertIdx);
+                    System.out.println("length: " + textData.length());
+                    if (insertIdx > textData.length()) {
                         textData.append(content);
-                    }else {
-                        textData.insert(insertIdx-1,content);
+                    } else {
+                        textData.insert(insertIdx - 1, content);
                     }
                     document.setText(textData);
                 }
@@ -148,11 +150,11 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
 
                     int start = deleteCommandObject.getInt("startIndex");
                     int end = deleteCommandObject.getInt("endIndex");
-                    System.out.println("start delete: "+start);
-                    System.out.println("end delete: "+ end);
+                    System.out.println("start delete: " + start);
+                    System.out.println("end delete: " + end);
                     try {
-                        textData.delete(start-1,end);
-                    } catch(Exception e) {
+                        textData.delete(start - 1, end);
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                     System.out.println(textData);
@@ -160,14 +162,14 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
 
                 }
             } else if (jObject.has("wholeDocument")) {
-                String wholeDoc= jObject.getString("wholeDocument");
+                String wholeDoc = jObject.getString("wholeDocument");
                 Log.v("wholeDoc: ", wholeDoc);
                 textData = new StringBuilder(wholeDoc);
                 document.setText(textData);
             } else if (jObject.has("endOfDoc")) {
                 Log.v("Return String: ", jObject.getString("endOfDoc"));
             } else if (jObject.has("beginningOfDoc")) {
-                Log.v("Return String: ", jObject.getString("beginningOfDoc"));
+                Log.v("BEGINNING OF DOC: ", jObject.getString("beginningOfDoc"));
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -178,7 +180,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
 
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-        document.setText(textDataFinal.substring(0,(int) Math.ceil(progress*.10*textDataFinal.length())));
+        document.setText(textDataFinal.substring(0, (int) Math.ceil(progress * .10 * textDataFinal.length())));
     }
 
     @Override
@@ -208,24 +210,29 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
     class myWebViewClient extends WebViewClient {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            view.loadUrl("https://docs.google.com/document/d/1Pe2CivDGHMg5jGVRUFjcNZOzYx4I0Mkvc-GN25k6p9A/edit?pref=2&pli=1");
+            view.loadUrl("https://docs.google.com/document/d/1iCHQpzQQJmhA67N8kKT4ry4m4wpyUShfD98h_LcxjjM/edit?pref=2&pli=1");
             return true;
         }
     }
 
     //These are all going to return asynchronously, so plan accordingly
+    //TODO: Might be useful to handle the error that occurs if the socket is null (aka teacher not connected to server). Could show a toast.
     public void getWholeDocument(String documentId) {
-        System.out.println("socket: " +socket);
-        System.out.println("docId: "+documentId);
-        socket.sendTextMessage("{type: wholeDocument, documentId: " + documentId + " }");
+        if (socket != null) {
+            socket.sendTextMessage("{type: wholeDocument, documentId: " + documentId + " }");
+        }
     }
 
-    public void getDocumentFromBeginning(String documentId, long endTime) {
-        socket.sendTextMessage("{type: documentFromBeginning, documentId: " + documentId + ", endTime: " + endTime + " }");
+    public void getDocumentFromBeginning(String documentId, int percentage) {
+        if (socket != null) {
+            socket.sendTextMessage("{type: documentFromBeginning, documentId: " + documentId + ", percentage: " + percentage + " }");
+        }
     }
 
     public void getDocumentToEnd(String documentId) {
-        socket.sendTextMessage("{type: documentToEnd, documentId: " + documentId + " }");
+        if (socket != null) {
+            socket.sendTextMessage("{type: documentToEnd, documentId: " + documentId + " }");
+        }
     }
 
 }
