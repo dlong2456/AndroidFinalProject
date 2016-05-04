@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         try {
             //use ws://10.0.2.2:8080 for localhost
             //"ws://classroom1.cs.unc.edu:5050" for CS server
-            socket.connect("ws://10.0.2.2:8080", new WebSocketHandler() {
+            socket.connect("ws://classroom1.cs.unc.edu:5050", new WebSocketHandler() {
                 @Override
                 public void onOpen() {
                     Log.v("WEBSOCKETS", "Connected to server.");
@@ -128,11 +128,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
     private void parseJSON(String data) {
         try {
             JSONObject jObject = new JSONObject(data);
-
-            Log.v("WEBSOCKETS", jObject.toString());
-
             if (jObject.has("status")) {
-                //TODO: save this in the database and use them for the live mode and project view
                 //Note: 0 is making progress, 1 is facing difficulty
                 setCurrentStatus(jObject.getInt("status"));
             } else if (jObject.has("insertCommands")) {
@@ -142,7 +138,6 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                 jObject.getString("documentId");
                 JSONArray insertCommands = jObject.getJSONArray("insertCommands");
                 for (int i = 0; i < insertCommands.length(); i++) {
-                    //TODO: save each of these in the database and use to update live mode
                     JSONObject insertCommandObject = insertCommands.getJSONObject(i);
                     insertCommandObject.getLong("timeStamp");
                     String content = insertCommandObject.getString("content");
@@ -163,7 +158,6 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                 //See above note on documentId
                 jObject.getString("documentId");
                 for (int i = 0; i < deleteCommands.length(); i++) {
-                    //TODO: save each of these in the database and use to update live mode
                     JSONObject deleteCommandObject = deleteCommands.getJSONObject(i);
                     deleteCommandObject.getLong("timeStamp");
 
@@ -180,8 +174,12 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                     document.setText(textData);
 
                 }
-            } else if (jObject.has("string")) {
-                Log.v("Return String: ", jObject.getString("string"));
+            } else if (jObject.has("wholeDocument")) {
+                Log.v("Return String: ", jObject.getString("wholeDocument"));
+            } else if (jObject.has("endOfDoc")) {
+                Log.v("Return String: ", jObject.getString("endOfDoc"));
+            } else if (jObject.has("beginningOfDoc")) {
+                Log.v("Return String: ", jObject.getString("beginningOfDoc"));
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -226,6 +224,21 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
             return true;
         }
     }
+
+    //These are all going to return asynchronously, so plan accordingly
+    public void getWholeDocument(String documentId) {
+        socket.sendTextMessage("{type: wholeDocument, documentId: " + documentId + " }");
+        return;
+    }
+
+    public void getDocumentFromBeginning(String documentId, long endTime) {
+        socket.sendTextMessage("{type: documentFromBeginning, documentId: " + documentId + ", endTime: " + endTime + " }");
+    }
+
+    public void getDocumentToEnd(String documentId) {
+        socket.sendTextMessage("{type: documentToEnd, documentId: " + documentId + " }");
+    }
+
 
 
 
