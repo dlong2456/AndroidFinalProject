@@ -1,5 +1,6 @@
 package com.example.duri.finalproject;
 
+import android.app.ActivityManager;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -30,6 +31,8 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
 
     private final WebSocketConnection socket = new WebSocketConnection();
     private int status;
+    private boolean live = false;
+    private String documentId="10eVBvPyYNHGE_xOOoIGfKYkIIrDpg9tUfn8FuSyVKIA";
 
     TextView document;
     StringBuilder textData = new StringBuilder("");
@@ -41,13 +44,12 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-
         SeekBar seek = (SeekBar) findViewById(R.id.seekBar);
         seek.setOnSeekBarChangeListener(this);
+        seek.setVisibility(View.GONE);
         document = (TextView) findViewById(R.id.textView2);
 
         document.setText(textData);
-        live(findViewById(R.id.button2));
 
         try {
             //use ws://10.0.2.2:8080 for localhost
@@ -56,7 +58,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                 @Override
                 public void onOpen() {
                     Log.v("WEBSOCKETS", "Connected to server.");
-                    getWholeDocument("10eVBvPyYNHGE_xOOoIGfKYkIIrDpg9tUfn8FuSyVKIA");
+                    live(findViewById(R.id.button2));
                 }
 
                 @Override
@@ -116,7 +118,8 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
             if (jObject.has("status")) {
                 //Note: 0 is making progress, 1 is facing difficulty
                 setCurrentStatus(jObject.getInt("status"));
-            } else if (jObject.has("insertCommands")) {
+            } else if (jObject.has("insertCommands")) { // this means insert or delete command
+                if(!live) return;
                 //save these in the database and use them for the live mode
                 //This identifies the document and therefore the student. We should have a database query that allows us to
                 //query with the documentId and receive the student's name in return.
@@ -182,7 +185,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 //        document.setText(textDataFinal.substring(0, (int) Math.ceil(progress * .10 * textDataFinal.length())));
-        getDocumentFromBeginning("10eVBvPyYNHGE_xOOoIGfKYkIIrDpg9tUfn8FuSyVKIA",progress);
+        getDocumentFromBeginning(documentId,progress);
 
     }
 
@@ -197,30 +200,39 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
     }
 
     public void live(View view) {
+        live=true;
         findViewById(R.id.seekBar).setVisibility(View.GONE);
         Button history = (Button) findViewById(R.id.button);
         view.setBackgroundColor(Color.GREEN);
         history.setBackgroundResource(android.R.drawable.btn_default);
+        if(socket.isConnected()) getWholeDocument(documentId);
+
     }
 
     public void history(View view) {
+        live=false;
         findViewById(R.id.seekBar).setVisibility(View.VISIBLE);
         Button live = (Button) findViewById(R.id.button2);
         view.setBackgroundColor(Color.GREEN);
         live.setBackgroundResource(android.R.drawable.btn_default);
+        getDocumentFromBeginning(documentId,((SeekBar)findViewById(R.id.seekBar)).getProgress());
     }
 
     //These are all going to return asynchronously, so plan accordingly
     //TODO: Might be useful to handle the error that occurs if the socket is null (aka teacher not connected to server). Could show a toast.
     public void getWholeDocument(String documentId) {
-        if (socket != null) {
+        if (socket.isConnected()) {
             socket.sendTextMessage("{type: wholeDocument, documentId: " + documentId + " }");
+        } else {
+            throw new RuntimeException("Not connected!");
         }
     }
 
     public void getDocumentFromBeginning(String documentId, int percentage) {
-        if (socket != null) {
+        if (socket.isConnected()) {
             socket.sendTextMessage("{type: documentFromBeginning, documentId: " + documentId + ", percentage: " + percentage + " }");
+        } else {
+            throw new RuntimeException("Not connected!");
         }
     }
 
