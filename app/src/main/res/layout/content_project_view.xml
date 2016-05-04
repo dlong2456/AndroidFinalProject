@@ -11,5 +11,11 @@
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context=".DetailedProjectView"
     tools:showIn="@layout/activity_project_view">
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/student_list">
 
+    </LinearLayout>
 </RelativeLayout>

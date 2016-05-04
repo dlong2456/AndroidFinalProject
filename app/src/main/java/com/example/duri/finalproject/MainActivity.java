@@ -1,9 +1,8 @@
 package com.example.duri.finalproject;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -12,6 +11,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -32,7 +32,21 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
     private int status;
 
     TextView document;
-    StringBuilder textData = new StringBuilder();
+    StringBuilder textData = new StringBuilder("This paper will build on eco-critical interpretations of Shakespeare’s work by\n" +
+            "\n" +
+            "discussing the convergence of ecology and performance in Druid Theater’s recent\n" +
+            "\n" +
+            "production DruidShakespeare, an adaptation by Mark O’Rowe of Shakespeare’s\n" +
+            "\n" +
+            "Richard II, Henry IV (Parts I and II), and Henry V. The site-specific nature of the show\n" +
+            "\n" +
+            "and the use of natural elements such as earth, water, and fire in performance\n" +
+            "\n" +
+            "contribute to an eco-critical interpretation of Shakespeare’s history plays.\n" +
+            "\n" +
+            "Specifically, this paper will investigate how the site-specific");
+    String textDataFinal;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,20 +54,14 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
 
         SeekBar seek = (SeekBar) findViewById(R.id.seekBar);
         seek.setOnSeekBarChangeListener(this);
         document = (TextView) findViewById(R.id.textView2);
 
-        document.setText("");
+        document.setText(textData);
+        textDataFinal = textData.toString();
+        live(findViewById(R.id.button2));
 //        WebView web = (WebView) findViewById(R.id.webView);
 //        web.setWebViewClient(new WebViewClient());
 //
@@ -150,7 +158,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                     if(insertIdx>textData.length()) {
                         textData.append(content);
                     }else {
-                        textData.insert(insertIdx,content);
+                        textData.insert(insertIdx-1,content);
                     }
                     document.setText(textData);
                 }
@@ -170,7 +178,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                     try {
                         textData.delete(start-1,end);
                     } catch(Exception e) {
-                        System.out.println(e.getCause().getMessage());
+                        e.printStackTrace();
                     }
                     System.out.println(textData);
                     document.setText(textData);
@@ -186,7 +194,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
 
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-        System.out.println("Yo new value!: " + progress);
+        document.setText(textDataFinal.substring(0,(int) Math.ceil(progress*.10*textDataFinal.length())));
     }
 
     @Override
@@ -198,6 +206,21 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
     public void onStopTrackingTouch(SeekBar seekBar) {
 
     }
+
+    public void live(View view) {
+        findViewById(R.id.seekBar).setVisibility(View.GONE);
+        Button history = (Button) findViewById(R.id.button);
+        view.setBackgroundColor(Color.GREEN);
+        history.setBackgroundResource(android.R.drawable.btn_default);
+    }
+
+    public void history(View view) {
+        findViewById(R.id.seekBar).setVisibility(View.VISIBLE);
+        Button live = (Button) findViewById(R.id.button2);
+        view.setBackgroundColor(Color.GREEN);
+        live.setBackgroundResource(android.R.drawable.btn_default);
+    }
+
     class myWebViewClient extends WebViewClient {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
@@ -206,10 +229,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         }
     }
 
-    public void projectList(View v) {
-        Intent intent = new Intent(this, ProjectList.class);
-        startActivity(intent);
-    }
+
 
 
 }
