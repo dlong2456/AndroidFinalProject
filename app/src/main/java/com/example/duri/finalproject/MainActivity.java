@@ -59,13 +59,10 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
 //
 //        web.loadUrl("https://docs.google.com/document/d/1Pe2CivDGHMg5jGVRUFjcNZOzYx4I0Mkvc-GN25k6p9A/edit?pref=2&pli=1");
 
-
-
-
         try {
             //use ws://10.0.2.2:8080 for localhost
             //"ws://classroom1.cs.unc.edu:5050" for CS server
-            socket.connect("ws://classroom1.cs.unc.edu:5050", new WebSocketHandler() {
+            socket.connect("ws://10.0.2.2:8080", new WebSocketHandler() {
                 @Override
                 public void onOpen() {
                     Log.v("WEBSOCKETS", "Connected to server.");
@@ -88,7 +85,6 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         } catch (WebSocketException wse) {
             Log.d("WEBSOCKETS", wse.getMessage());
         }
-
     }
 
     @Override
@@ -170,12 +166,14 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                     try {
                         textData.delete(start-1,end);
                     } catch(Exception e) {
-                        System.out.println(e.getCause().getMessage());
+                        e.printStackTrace();
                     }
                     System.out.println(textData);
                     document.setText(textData);
 
                 }
+            } else if (jObject.has("string")) {
+                Log.v("Return String: ", jObject.getString("string"));
             }
         } catch (JSONException e) {
             e.printStackTrace();
