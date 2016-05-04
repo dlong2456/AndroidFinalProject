@@ -72,9 +72,9 @@ public class SummaryProjectView extends AppCompatActivity {
 
         demoNewsFeed();
     }
-    int i=0;
-    int j=100;
-    int k=200;
+    short i=0;
+    short j=100;
+    short k=200;
     private void demoNewsFeed() {
         new Thread(new Runnable() {
             @Override
@@ -132,6 +132,4 @@ public class SummaryProjectView extends AppCompatActivity {
             }
         }).start();
     }
-
-
 }

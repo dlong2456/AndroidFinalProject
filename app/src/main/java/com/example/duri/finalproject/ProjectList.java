@@ -15,6 +15,15 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 
 public class ProjectList extends AppCompatActivity {
@@ -25,55 +34,83 @@ public class ProjectList extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_project_list);
-        LinearLayout layout = (LinearLayout) findViewById(R.id.project_list);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        ArrayList<String> projectList = getProjects();
-        for (int i = 0; i<projectList.size(); i++) {
-            LinearLayout aProject = new LinearLayout(this);
-            aProject.setOrientation(LinearLayout.HORIZONTAL);
-            layout.addView(aProject);
-            TextView projectName = new TextView(this);
-            projectName.setText(projectList.get(i));
-            aProject.addView(projectName);
-            final Button button = new Button(this);
-            button.setWidth(22);
-            button.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
-            button.setId(buttonIdCounter);
-            button.setText("Overview");
-            buttonIdCounter++;
-            final Button button2 = new Button(this);
-            button2.setId(buttonIdCounter);
-            button2.setText("Detail View");
-            button2.setWidth(22);
-            button2.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
-
-            //SET CLICK LISTENER
-            button.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    goToProjectOverview(v);
-                }
-            });
-            button2.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    goToProjectDetailed(v);
-                }
-            });
-            //SET LAYOUT PARAMETERS
-//            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
-//                    LinearLayout.LayoutParams.WRAP_CONTENT);
-//            button.setLayoutParams(params);
-//            button2.setLayoutParams(params);
-            //ADD BUTTON TO GRID
-            aProject.addView(button);
-            aProject.addView(button2);
-        }
+        getAndDisplayProjects();
 
     }
 
-    private ArrayList<String> getProjects() {
-        //TODO: query the database here. This just returns a dummy array right now.
+    private void addNewProject(String name, LinearLayout rows) {
+        LinearLayout aProject = new LinearLayout(this);
+        aProject.setOrientation(LinearLayout.HORIZONTAL);
+        rows.addView(aProject);
+        TextView projectName = new TextView(this);
+        projectName.setText(name);
+        projectName.setWidth(450);
+        aProject.addView(projectName);
+        final Button button = new Button(this);
+        button.setWidth(22);
+        button.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
+        button.setId(buttonIdCounter);
+        button.setText("Overview");
+        buttonIdCounter++;
+        final Button button2 = new Button(this);
+        button2.setId(buttonIdCounter);
+        button2.setText("Detail View");
+        button2.setWidth(22);
+        button2.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
+
+        //SET CLICK LISTENER
+        button.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                goToProjectOverview(v);
+            }
+        });
+        button2.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                goToProjectDetailed(v);
+            }
+        });
+        //SET LAYOUT PARAMETERS
+//            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(RelativeLayout.ALIGN_PARENT_RIGHT,
+//                    LinearLayout.LayoutParams.MATCH_PARENT);
+//            button.setLayoutParams(params);
+//            button2.setLayoutParams(params);
+        //ADD BUTTON TO GRID
+        aProject.addView(button);
+        aProject.addView(button2);
+    }
+
+    private ArrayList<String> getAndDisplayProjects() {
+
+        JsonArrayRequest jsArrRequest = new JsonArrayRequest
+                (Request.Method.GET, "http://comp156.cs.unc.edu/comp790/all_projects.php", null, new Response.Listener<JSONArray>() {
+
+                    @Override
+                    public void onResponse(JSONArray projectList) {
+                        for (int i = 0; i<projectList.length(); i++) {
+                            try {
+                                LinearLayout layout = (LinearLayout) findViewById(R.id.project_list);
+                                JSONObject anObj = (JSONObject) projectList.get(i);
+                                addNewProject(anObj.getString("name"),layout);
+
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+                    }
+                }, new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        System.out.println(error.getMessage());
+
+                    }
+                });
+        ApplicationController.getInstance().addToRequestQueue(jsArrRequest);
         ArrayList<String> projects = new ArrayList<String>();
+
         projects.add("Social Security Paper");
         projects.add("American Gov Paper");
         projects.add("Presidents Paper");
@@ -95,22 +132,7 @@ public class ProjectList extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 LinearLayout layout = (LinearLayout) findViewById(R.id.project_list);
-                final Button button = new Button(getApplicationContext());
-                button.setId(buttonIdCounter);
-                button.setText(input.getText().toString());
-                buttonIdCounter++;
-                //SET CLICK LISTENER
-                button.setOnClickListener(new View.OnClickListener() {
-                    public void onClick(View v) {
-                        goToProjectOverview(v);
-                    }
-                });
-                //SET LAYOUT PARAMETERS
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT);
-                button.setLayoutParams(params);
-                //ADD BUTTON TO GRID
-                layout.addView(button);
+                addNewProject(input.getText().toString(),layout);
             }
         });
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
