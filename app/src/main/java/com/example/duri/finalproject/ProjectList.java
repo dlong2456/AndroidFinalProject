@@ -163,6 +163,7 @@ public class ProjectList extends AppCompatActivity {
             //TODO: intent here to open detailed project view
             Intent intent = new Intent(this, DetailedProjectView.class);
             intent.putExtra("projectChosen", projectsMapping.get(projectChosen));
+            intent.putExtra("projectMapping", projectsMapping);
 //            System.out.println(projectChosen);
 //            System.out.println(projectsMapping);
 //            System.out.println("projectChosen: "+ projectsMapping.get(projectChosen));

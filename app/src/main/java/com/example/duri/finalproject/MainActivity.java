@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -37,7 +38,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
 
     private boolean live = false;
     private String documentId="";
-
+    private SeekBar seek;
 
     private TextView document;
     private StringBuilder textData = new StringBuilder("");
@@ -49,7 +50,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        SeekBar seek = (SeekBar) findViewById(R.id.seekBar);
+        seek = (SeekBar) findViewById(R.id.seekBar);
         seek.setOnSeekBarChangeListener(this);
         seek.setVisibility(View.GONE);
         document = (TextView) findViewById(R.id.textView2);
@@ -64,7 +65,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         try {
             //use ws://10.0.2.2:8080 for localhost
             //"ws://classroom1.cs.unc.edu:5050" for CS server
-            socket.connect("ws://10.0.2.2:8080", new WebSocketHandler() {
+            socket.connect("ws://classroom1.cs.unc.edu:5050", new WebSocketHandler() {
                 @Override
                 public void onOpen() {
                     Log.v("WEBSOCKETS", "Connected to server.");
@@ -151,11 +152,11 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
     public void setCurrentStatus(int status) {
         this.status = status;
     }
-
     private void parseJSON(String data) {
         try {
             JSONObject jObject = new JSONObject(data);
             if (jObject.has("status")) {
+                System.out.println(data);
                 //Note: 0 is making progress, 1 is facing difficulty
                 //TODO: save this in the database
                 setCurrentStatus(jObject.getInt("status"));
@@ -218,8 +219,20 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
             } else if (jObject.has("statusGivenPercentage")) {
                 String status = jObject.getString("statusGivenPercentage");
                 Log.v("STATUS GIVEN PERCENTAGE", status);
+                switch (status) {
+                    case "-1":
+                        seek.setBackgroundColor(Color.GRAY);
+                        break;
+                    case "0":
+                        seek.setBackgroundColor(Color.GREEN);
+                        break;
+                    case "1":
+                        seek.setBackgroundColor(Color.RED);
+                        break;
+                }
             }
         } catch (JSONException e) {
+            System.err.println(data);
             e.printStackTrace();
         }
 
@@ -228,7 +241,6 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
 
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-//        document.setText(textDataFinal.substring(0, (int) Math.ceil(progress * .10 * textDataFinal.length())));
         getDocumentFromBeginning(documentId,progress);
         getStatusGivenPercentage(documentId, progress);
 

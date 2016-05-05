@@ -37,7 +37,11 @@ public class SummaryProjectView extends AppCompatActivity {
 
     TextView[] studentFeeds = new TextView[3];
     TextView[] studentLabels = new TextView[3];
+    int docGreenRedTotal=0;
+    int greenTotal=0;
     private HashMap<String, String> documentMapping = new HashMap<>();
+    Entry entry1, entry2;
+    PieChart chart;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,14 +50,14 @@ public class SummaryProjectView extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        PieChart chart = (PieChart) findViewById(R.id.view);
+        chart = (PieChart) findViewById(R.id.view);
         List<Entry> entries = new ArrayList<Entry>();
         List<Integer> colors = new ArrayList<Integer>();
         colors.add(R.color.Green);
         colors.add(R.color.Red);
 
-        Entry entry1 = new Entry(75,1);
-        Entry entry2 = new Entry(25,2);
+        entry1 = new Entry(75,1);
+        entry2 = new Entry(25,2);
         entries.add(entry1);
         entries.add(entry2);
         PieDataSet dataSet = new PieDataSet(entries,"");
@@ -117,6 +121,17 @@ public class SummaryProjectView extends AppCompatActivity {
                                 JSONObject anObj = (JSONObject) documentList.get(i);
                                 String studentID = anObj.getString("studentID");
                                 String docId = anObj.getString("documentID");
+                                String docStatus = anObj.getString("docStatus");
+                                switch (docStatus) {
+                                    case "-1":
+                                        break;
+                                    case "0":
+                                        docGreenRedTotal++; greenTotal++;
+                                        break;
+                                    case "1":
+                                        docGreenRedTotal++;
+                                        break;
+                                }
                                 documentMapping.put(docId, studentID);
                                 System.out.println(documentMapping);
                                 getAndDisplayStudents();
@@ -125,6 +140,12 @@ public class SummaryProjectView extends AppCompatActivity {
                                 e.printStackTrace();
                             }
                         }
+                        System.out.println("greenTotal: "+greenTotal);
+                        System.out.println("greenRedTotal: " + docGreenRedTotal);
+                        entry1.setVal((greenTotal / (float) docGreenRedTotal) * 100);
+                        entry2.setVal(100 - (greenTotal / (float) docGreenRedTotal) * 100);
+                        chart.notifyDataSetChanged();
+                        chart.invalidate();
 
                     }
                 }, new Response.ErrorListener() {

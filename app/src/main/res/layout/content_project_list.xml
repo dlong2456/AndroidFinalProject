@@ -23,14 +23,6 @@
             <!--android:layout_height="wrap_content"-->
             <!--android:text="New Button"-->
             <!--android:id="@+id/button" />-->
-        <Button
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:text="+"
-            android:id="@+id/addProject"
-            android:layout_gravity="right"
-            android:textSize="30dp"
-            android:onClick="addProject"/>
     </LinearLayout>
 
 

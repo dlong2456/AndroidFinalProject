@@ -1,6 +1,7 @@
 package com.example.duri.finalproject;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -75,6 +76,47 @@ public class DetailedProjectView extends AppCompatActivity {
                 });
         ApplicationController.getInstance().addToRequestQueue(jsArrRequest);
     }
+
+    private void setStatus(final String student, final Button b) {
+        String projectId =  getIntent().getStringExtra("projectChosen");
+        String studentId = studentsMapping.get(student);
+        JsonArrayRequest jsArrRequest = new JsonArrayRequest
+                (Request.Method.GET, "http://comp156.cs.unc.edu/comp790/document.php?projectID="+projectId+"&studentID="+studentId, null, new Response.Listener<JSONArray>() {
+
+                    @Override
+                    public void onResponse(JSONArray projectList) {
+                            try {
+                                JSONObject anObj = (JSONObject) projectList.get(0);
+                                String statusCode = anObj.getString("docStatus");
+                                System.out.println("status for: "+ student+": "+statusCode);
+                                switch (statusCode) {
+                                    case "-1":
+                                        b.setBackgroundColor(Color.GRAY);
+                                        break;
+                                    case "0":
+                                        b.setBackgroundColor(Color.GREEN);
+                                        break;
+                                    case "1":
+                                        b.setBackgroundColor(Color.RED);
+                                        break;
+                                }
+
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+
+                    }
+                }, new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        System.out.println(error.getMessage());
+
+                    }
+                });
+        ApplicationController.getInstance().addToRequestQueue(jsArrRequest);
+
+    }
     private void addNewStudent(String student, LinearLayout layout) {
         LinearLayout aStudent = new LinearLayout(this);
         aStudent.setOrientation(LinearLayout.HORIZONTAL);
@@ -92,6 +134,7 @@ public class DetailedProjectView extends AppCompatActivity {
                 goToStudent(v);
             }
         });
+        setStatus(student,button);
     }
 
 }
