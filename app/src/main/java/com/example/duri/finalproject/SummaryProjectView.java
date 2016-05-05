@@ -2,41 +2,42 @@ package com.example.duri.finalproject;
 
 import android.graphics.Color;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import com.github.mikephil.charting.charts.Chart;
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
-import com.github.mikephil.charting.utils.ColorTemplate;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
+import de.tavendo.autobahn.WebSocketConnection;
+import de.tavendo.autobahn.WebSocketException;
+import de.tavendo.autobahn.WebSocketHandler;
+
 public class SummaryProjectView extends AppCompatActivity {
-    TextView t5;
-    TextView t7;
-    TextView t9;
-    String text = "This paper will build on eco-critical interpretations of Shakespeare’s work by\n" +
-            "\n" +
-            "discussing the convergence of ecology and performance in Druid Theater’s recent\n" +
-            "\n" +
-            "production DruidShakespeare, an adaptation by Mark O’Rowe of Shakespeare’s\n" +
-            "\n" +
-            "Richard II, Henry IV (Parts I and II), and Henry V. The site-specific nature of the show\n" +
-            "\n" +
-            "and the use of natural elements such as earth, water, and fire in performance\n" +
-            "\n" +
-            "contribute to an eco-critical interpretation of Shakespeare’s history plays.\n" +
-            "\n" +
-            "Specifically, this paper will investigate how the site-specific";
+    private final WebSocketConnection socket = new WebSocketConnection();
+
+    TextView[] studentFeeds = new TextView[3];
+    TextView[] studentLabels = new TextView[3];
+    private HashMap<String, String> documentMapping = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,71 +66,150 @@ public class SummaryProjectView extends AppCompatActivity {
         chart.setData(data);
         chart.setUsePercentValues(true);
         chart.setDescription("");
-        text = text.replace("\n"," ");
-        t5 = (TextView) findViewById(R.id.textView5);
-        t7 = (TextView) findViewById(R.id.textView7);
-        t9 = (TextView) findViewById(R.id.textView9);
+        studentFeeds[0] = (TextView) findViewById(R.id.textView5);
+        studentFeeds[1] = (TextView) findViewById(R.id.textView7);
+        studentFeeds[2] = (TextView) findViewById(R.id.textView9);
 
-        demoNewsFeed();
-    }
-    short i=0;
-    short j=100;
-    short k=200;
-    private void demoNewsFeed() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            int start = i%((text.length()-30));
-                            int end = (i+30)%(text.length());
-                            if(start >=0 && end >= 0 && start<text.length() && end<text.length()) {
-                                t5.setText(text.substring(start, end));
-                            }
-                            i++;
-                        }
-                    });
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            int start = j%((text.length()-30));
-                            int end = (j+30)%(text.length());
-                            if(start >=0 && end >= 0 && start<text.length() && end<text.length()) {
-                                t7.setText(text.substring(start, end));
-                            }
-                            j++;
-                        }
-                    });
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            int start = k%((text.length()-30));
-                            int end = (k+30)%(text.length());
-                            if(start >=0 && end >= 0 && start<text.length() && end<text.length()) {
-                                t9.setText(text.substring(start, end));
-                            }
-                            k++;
-                        }
-                    });
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+        studentLabels[0] = (TextView) findViewById(R.id.textView4);
+        studentLabels[1] = (TextView) findViewById(R.id.textView6);
+        studentLabels[2] = (TextView) findViewById(R.id.textView8);
+        getProjectDocuments();
+
+        try {
+            //use ws://10.0.2.2:8080 for localhost
+            //"ws://classroom1.cs.unc.edu:5050" for CS server
+            socket.connect("ws://classroom1.cs.unc.edu:5050", new WebSocketHandler() {
+                @Override
+                public void onOpen() {
+                    Log.v("WEBSOCKETS", "Connected to server.");
+
+                }
+
+                @Override
+                public void onTextMessage(String payload) {
+                    if (payload.equals("handshake")) {
+                        socket.sendTextMessage("teacher");
+                    } else if (payload.equals("documentNotFound")) {
+                        //TODO: Handle this error
+                    } else {
+                        parseJSON(payload);
                     }
                 }
+
+                @Override
+                public void onClose(int code, String reason) {
+                    Log.v("WEBSOCKETS", "Connection lost " + reason);
+                }
+            });
+        } catch (WebSocketException wse) {
+            Log.d("WEBSOCKETS", wse.getMessage());
+        }
+    }
+
+    private void getProjectDocuments() {
+        JsonArrayRequest jsArrRequest = new JsonArrayRequest
+                (Request.Method.GET, "http://comp156.cs.unc.edu/comp790/document.php?projectID="+getIntent().getExtras().getString("projectChosen"), null, new Response.Listener<JSONArray>() {
+
+                    @Override
+                    public void onResponse(JSONArray documentList) {
+                        for (int i = 0; i<documentList.length(); i++) {
+                            try {
+                                JSONObject anObj = (JSONObject) documentList.get(i);
+                                String studentID = anObj.getString("studentID");
+                                String docId = anObj.getString("documentID");
+                                documentMapping.put(docId, studentID);
+                                System.out.println(documentMapping);
+                                getAndDisplayStudents();
+
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+                    }
+                }, new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        System.out.println(error.getMessage());
+
+                    }
+                });
+        ApplicationController.getInstance().addToRequestQueue(jsArrRequest);
+    }
+
+    int latestIndex;
+    private void parseJSON(String data) {
+        try {
+            System.out.println(data);
+            JSONObject jObject = new JSONObject(data);
+            System.out.println(jObject.has("deleteCommands"));
+            if (jObject.has("substring")) {
+                String substring = jObject.getString("substring");
+                Log.v("SUBSTRING: ", substring);
+                String docId = jObject.getString("documentId");
+                int studentId = Integer.parseInt(documentMapping.get(docId));
+                studentFeeds[studentId-1].setText(substring);
+            }else  if (jObject.has("insertCommands")) {
+                JSONArray insertCommands = jObject.getJSONArray("insertCommands");
+                JSONArray deleteCommands = jObject.getJSONArray("deleteCommands");
+                    if(insertCommands.length()!=0) {
+                        latestIndex = jObject.getJSONArray("insertCommands").getJSONObject(0).getInt("index");
+                        String documentId = jObject.getString("documentId");
+                        if(documentMapping.containsKey(documentId)){
+                            getDocumentSubstring(documentId, latestIndex, 20);
+                        }
+                    }  else if(deleteCommands.length()!=0) {
+                        latestIndex = jObject.getJSONArray("deleteCommands").getJSONObject(0).getInt("endIndex");
+                        String documentId = jObject.getString("documentId");
+                        if(documentMapping.containsKey(documentId)) {
+                            getDocumentSubstring(documentId, latestIndex - 1, 20);
+                        }
+                    }
+                }
+
             }
-        }).start();
+         catch (JSONException e) {
+            System.err.println(data);
+            e.printStackTrace();
+        }
+    }
+    private void getAndDisplayStudents() {
+        JsonArrayRequest jsArrRequest = new JsonArrayRequest
+                (Request.Method.GET, "http://comp156.cs.unc.edu/comp790/all_students.php", null, new Response.Listener<JSONArray>() {
+
+                    @Override
+                    public void onResponse(JSONArray projectList) {
+                        for (int i = 0; i<((projectList.length()<3)?projectList.length():3); i++) {
+                            try {
+                                JSONObject anObj = (JSONObject) projectList.get(i);
+                                String fullName = anObj.getString("firstName")+" "+anObj.getString("lastName");
+                                studentLabels[i].setText(fullName);
+
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+                    }
+                }, new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        System.out.println(error.getMessage());
+
+                    }
+                });
+        ApplicationController.getInstance().addToRequestQueue(jsArrRequest);
+    }
+    public void getDocumentSubstring(String documentId, int index, int substringLength) {
+        if (socket.isConnected()) {
+            socket.sendTextMessage("{type: documentSubstring, documentId: " + documentId + ", index: " + index + ", substringLength: " + substringLength + " }");
+        }
+        else {
+            Toast t = new Toast(getApplicationContext());
+            t.setText("Not connected!");
+            t.show();
+        }
     }
 }

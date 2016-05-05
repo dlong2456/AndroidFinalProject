@@ -25,11 +25,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class ProjectList extends AppCompatActivity {
 
     private int buttonIdCounter = 0;
-
+    private HashMap<String, String>  projectsMapping = new HashMap<>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -53,12 +54,14 @@ public class ProjectList extends AppCompatActivity {
         button.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
         button.setId(buttonIdCounter);
         button.setText("Overview");
+        button.setTag(R.string.ProjectName, name);
         buttonIdCounter++;
         final Button button2 = new Button(this);
         button2.setId(buttonIdCounter);
         button2.setText("Detail View");
         button2.setWidth(22);
         button2.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
+        button2.setTag(R.string.ProjectName,name);
 
         //SET CLICK LISTENER
         button.setOnClickListener(new View.OnClickListener() {
@@ -81,7 +84,7 @@ public class ProjectList extends AppCompatActivity {
         aProject.addView(button2);
     }
 
-    private ArrayList<String> getAndDisplayProjects() {
+    private void getAndDisplayProjects() {
 
         JsonArrayRequest jsArrRequest = new JsonArrayRequest
                 (Request.Method.GET, "http://comp156.cs.unc.edu/comp790/all_projects.php", null, new Response.Listener<JSONArray>() {
@@ -92,7 +95,10 @@ public class ProjectList extends AppCompatActivity {
                             try {
                                 LinearLayout layout = (LinearLayout) findViewById(R.id.project_list);
                                 JSONObject anObj = (JSONObject) projectList.get(i);
-                                addNewProject(anObj.getString("name"),layout);
+                                String name = anObj.getString("name");
+                                String id = (anObj.getString("assignmentID"));
+                                projectsMapping.put(name,id);
+                                addNewProject(name,layout);
 
                             } catch (JSONException e) {
                                 e.printStackTrace();
@@ -109,12 +115,6 @@ public class ProjectList extends AppCompatActivity {
                     }
                 });
         ApplicationController.getInstance().addToRequestQueue(jsArrRequest);
-        ArrayList<String> projects = new ArrayList<String>();
-
-        projects.add("Social Security Paper");
-        projects.add("American Gov Paper");
-        projects.add("Presidents Paper");
-        return projects;
     }
 
     public void addProject(View v) {
@@ -148,10 +148,10 @@ public class ProjectList extends AppCompatActivity {
         //This should always be true but checking just in case
         if (v instanceof Button) {
             Button b = (Button) v;
-            String projectChosen = b.getText().toString();
+            String projectChosen = (String) b.getTag(R.string.ProjectName);
             //TODO: intent here to open detailed project view
             Intent intent = new Intent(this, SummaryProjectView.class);
-            intent.putExtra("projectChosen", projectChosen);
+            intent.putExtra("projectChosen", projectsMapping.get(projectChosen));
             startActivity(intent);
         }
     }
@@ -159,10 +159,13 @@ public class ProjectList extends AppCompatActivity {
         //This should always be true but checking just in case
         if (v instanceof Button) {
             Button b = (Button) v;
-            String projectChosen = b.getText().toString();
+            String projectChosen = (String) b.getTag(R.string.ProjectName);
             //TODO: intent here to open detailed project view
             Intent intent = new Intent(this, DetailedProjectView.class);
-            intent.putExtra("projectChosen", projectChosen);
+            intent.putExtra("projectChosen", projectsMapping.get(projectChosen));
+//            System.out.println(projectChosen);
+//            System.out.println(projectsMapping);
+//            System.out.println("projectChosen: "+ projectsMapping.get(projectChosen));
             startActivity(intent);
         }
     }

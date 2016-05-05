@@ -1,21 +1,24 @@
 package com.example.duri.finalproject;
 
-import android.app.ActivityManager;
-import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
+
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -31,9 +34,9 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
 
     private final WebSocketConnection socket = new WebSocketConnection();
     private int status;
-    
+
     private boolean live = false;
-    private String documentId="10eVBvPyYNHGE_xOOoIGfKYkIIrDpg9tUfn8FuSyVKIA";
+    private String documentId="";
 
     private TextView document;
     private StringBuilder textData = new StringBuilder("");
@@ -49,9 +52,14 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         seek.setOnSeekBarChangeListener(this);
         seek.setVisibility(View.GONE);
         document = (TextView) findViewById(R.id.textView2);
-
+        document.setMovementMethod(new ScrollingMovementMethod());
         document.setText(textData);
+        setDocumentIdAndBegin();
 
+    }
+
+
+    private void connectToSocket() {
         try {
             //use ws://10.0.2.2:8080 for localhost
             //"ws://classroom1.cs.unc.edu:5050" for CS server
@@ -82,6 +90,35 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         } catch (WebSocketException wse) {
             Log.d("WEBSOCKETS", wse.getMessage());
         }
+    }
+    private void setDocumentIdAndBegin() {
+        String projectId = getIntent().getStringExtra("projectChosen");
+        String studentId = getIntent().getStringExtra("studentChosen");
+        System.out.println("http://comp156.cs.unc.edu/comp790/document.php?projectID="+projectId+"&studentID="+studentId);
+        JsonArrayRequest jsArrRequest = new JsonArrayRequest
+                (Request.Method.GET, "http://comp156.cs.unc.edu/comp790/document.php?projectID="+projectId+"&studentID="+studentId, null, new Response.Listener<JSONArray>() {
+
+                    @Override
+                    public void onResponse(JSONArray documentList) {
+                        try {
+                            JSONObject anObj = (JSONObject) documentList.get(0);
+                            documentId = anObj.getString("documentID");
+                            System.out.println("current doc: "+documentId);
+                            connectToSocket();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+                }, new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        System.out.println(error.getMessage());
+
+                    }
+                });
+        ApplicationController.getInstance().addToRequestQueue(jsArrRequest);
     }
 
     @Override
@@ -222,12 +259,13 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
     }
 
     //These are all going to return asynchronously, so plan accordingly
-    //TODO: Might be useful to handle the error that occurs if the socket is null (aka teacher not connected to server). Could show a toast.
     public void getWholeDocument(String documentId) {
         if (socket.isConnected()) {
             socket.sendTextMessage("{type: wholeDocument, documentId: " + documentId + " }");
         } else {
-            throw new RuntimeException("Not connected!");
+            Toast t = new Toast(getApplicationContext());
+            t.setText("Not connected!");
+            t.show();
         }
     }
 
@@ -235,14 +273,11 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         if (socket.isConnected()) {
             socket.sendTextMessage("{type: documentFromBeginning, documentId: " + documentId + ", percentage: " + percentage + " }");
         } else {
-            throw new RuntimeException("Not connected!");
+            Toast t = new Toast(getApplicationContext());
+            t.setText("Not connected!");
+            t.show();
         }
     }
 
-    public void getDocumentSubstring(String documentId, int index, int substringLength) {
-        if (socket != null) {
-            socket.sendTextMessage("{type: documentSubstring, documentId: " + documentId + ", index: " + index + ", substringLength: " + substringLength + " }");
-        }
-    }
 
 }

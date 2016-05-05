@@ -4,4 +4,6 @@
     <string name="title_activity_project_overview">ProjectOverview</string>
     <string name="title_activity_project_view">ProjectView</string>
     <string name="title_activity_project_list">ProjectList</string>
+    <string name="ProjectName">Project Name</string>
+    <string name="StudentName">Student Name</string>
 </resources>
