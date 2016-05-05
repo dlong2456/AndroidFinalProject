@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
     private boolean live = false;
     private String documentId="";
 
+
     private TextView document;
     private StringBuilder textData = new StringBuilder("");
 
@@ -63,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         try {
             //use ws://10.0.2.2:8080 for localhost
             //"ws://classroom1.cs.unc.edu:5050" for CS server
-            socket.connect("ws://classroom1.cs.unc.edu:5050", new WebSocketHandler() {
+            socket.connect("ws://10.0.2.2:8080", new WebSocketHandler() {
                 @Override
                 public void onOpen() {
                     Log.v("WEBSOCKETS", "Connected to server.");
@@ -172,6 +173,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                     Log.v("WEBSOCKETS", content);
 //                    document.append(insertCommandObject.getString("content"));
                     int insertIdx = insertCommandObject.getInt("index");
+                    getDocumentSubstring(documentId, insertIdx, 20);
                     System.out.println("trying to insert at: " + insertIdx);
                     System.out.println("length: " + textData.length());
                     if (insertIdx > textData.length()) {
@@ -188,7 +190,6 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                 for (int i = 0; i < deleteCommands.length(); i++) {
                     JSONObject deleteCommandObject = deleteCommands.getJSONObject(i);
                     deleteCommandObject.getLong("timeStamp");
-
                     int start = deleteCommandObject.getInt("startIndex");
                     int end = deleteCommandObject.getInt("endIndex");
                     System.out.println("start delete: " + start);
@@ -214,6 +215,9 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                 Log.v("BEGINNING OF DOC: ", partialDoc);
                 textData = new StringBuilder(partialDoc);
                 document.setText(textData);
+            } else if (jObject.has("statusGivenPercentage")) {
+                String status = jObject.getString("statusGivenPercentage");
+                Log.v("STATUS GIVEN PERCENTAGE", status);
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -226,6 +230,7 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 //        document.setText(textDataFinal.substring(0, (int) Math.ceil(progress * .10 * textDataFinal.length())));
         getDocumentFromBeginning(documentId,progress);
+        getStatusGivenPercentage(documentId, progress);
 
     }
 
@@ -255,7 +260,8 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         Button live = (Button) findViewById(R.id.button2);
         view.setBackgroundColor(Color.GREEN);
         live.setBackgroundResource(android.R.drawable.btn_default);
-        getDocumentFromBeginning(documentId,((SeekBar)findViewById(R.id.seekBar)).getProgress());
+        getDocumentFromBeginning(documentId, ((SeekBar) findViewById(R.id.seekBar)).getProgress());
+        getStatusGivenPercentage(documentId, ((SeekBar) findViewById(R.id.seekBar)).getProgress());
     }
 
     //These are all going to return asynchronously, so plan accordingly
@@ -279,5 +285,20 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         }
     }
 
+    public void getDocumentSubstring(String documentId, int index, int substringLength) {
+        if (socket != null) {
+            socket.sendTextMessage("{type: documentSubstring, documentId: " + documentId + ", index: " + index + ", substringLength: " + substringLength + " }");
+        } else {
+            throw new RuntimeException("Not connected!");
+        }
+    }
+
+    public void getStatusGivenPercentage(String documentId, int percentage) {
+        if (socket.isConnected()) {
+            socket.sendTextMessage("{type: statusGivenPercentage, documentId: " + documentId + ", percentage: " + percentage + " }");
+        } else {
+            throw new RuntimeException("Not connected!");
+        }
+    }
 
 }
